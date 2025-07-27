@@ -8,11 +8,31 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const router = useRouter();
 
-  const handleLogin = () => {
-    if (admins.includes(username) && password === "1234") {
+  const handleLogin = async () => {
+    try {
+      const response = await fetch("https://the-sneaky-store.onrender.com/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username,
+          password
+        })
+      });
+  
+      if (!response.ok) {
+        alert("Usuario o contraseña incorrectos");
+        return;
+      }
+  
+      const data = await response.json();
+      // Guardar el token si lo necesitas
+      localStorage.setItem("token", data.access_token);
       router.push("/inventario");
-    } else {
-      alert("Usuario o contraseña incorrectos");
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
+      alert("Ocurrió un error al intentar iniciar sesión.");
     }
   };
 
