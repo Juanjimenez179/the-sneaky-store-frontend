@@ -10,7 +10,7 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch("https://the-sneaky-store.onrender.com/login", {
+      const response = await fetch("https://the-sneaky-store.onrender.com/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
