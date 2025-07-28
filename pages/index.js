@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 
-const admins = ["Elizabeth-Cardona20", "Gio-Cardona20"];
-
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -15,19 +13,17 @@ export default function Login() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          username,
-          password
-        })
+        body: JSON.stringify({ username, password })
       });
-  
+
       if (!response.ok) {
-        alert("Usuario o contraseña incorrectos");
+        // Extrae el mensaje exacto del backend (FastAPI)
+        const errorData = await response.json();
+        alert(errorData.detail || "Error desconocido");
         return;
       }
-  
+
       const data = await response.json();
-      // Guardar el token si lo necesitas
       localStorage.setItem("token", data.access_token);
       router.push("/inventario");
     } catch (error) {
@@ -64,3 +60,4 @@ export default function Login() {
     </div>
   );
 }
+
