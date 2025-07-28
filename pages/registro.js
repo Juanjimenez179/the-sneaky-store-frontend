@@ -65,7 +65,7 @@ export default function Registro() {
             className="w-full px-4 py-2 border rounded-md"
           />
 
-          <input
+          <select
             type="text"
             name="almacen"
             placeholder="Nombre del Almacén"
@@ -73,7 +73,13 @@ export default function Registro() {
             onChange={handleChange}
             required
             className="w-full px-4 py-2 border rounded-md"
-          />
+          >
+            <option value="">Selecciona un almacén</option>
+            <option value="Almacén Centro">Almacén Centro</option>
+            <option value="Almacén Bello">Almacén Bello</option>
+            <option value="Almacén Itagüí">Almacén Itagüí</option>
+            <option value="Almacén Online">Almacén Online</option>
+          </select>
 
           <button
             type="submit"
