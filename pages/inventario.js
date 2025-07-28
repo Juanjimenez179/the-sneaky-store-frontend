@@ -1,82 +1,124 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
-const almacenes = ["Almacén Centro", "Almacén Norte", "Almacén Sur"];
-const tallasDisponibles = ["35", "36", "37", "38", "39", "40", "41", "42", "43"];
+export default function Inventario() {
+  const [productos, setProductos] = useState([]);
+  const [filtro, setFiltro] = useState("");
+  const [orden, setOrden] = useState("referencia");
+  const [asc, setAsc] = useState(true);
+  const [registrosPorPagina, setRegistrosPorPagina] = useState(25);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [almacenes, setAlmacenes] = useState([]);
+  const [almacenSeleccionado, setAlmacenSeleccionado] = useState("");
 
-export default function Registro() {
-  const router = useRouter();
-  const [referencia, setReferencia] = useState("");
-  const [color, setColor] = useState("");
-  const [talla, setTalla] = useState("");
-  const [cantidad, setCantidad] = useState("");
-  const [almacen, setAlmacen] = useState("");
+  useEffect(() => {
+    fetch("https://the-sneaky-store.onrender.com/products")
+      .then((res) => res.json())
+      .then((data) => {
+        setProductos(data);
+        const almacenesUnicos = [...new Set(data.map((p) => p.almacen))];
+        setAlmacenes(almacenesUnicos);
+      })
+      .catch(() => alert("Error al cargar inventario"));
+  }, []);
 
-  const handleRegistro = async () => {
-    if (!referencia || !color || !talla || !cantidad || !almacen) {
-      alert("Por favor completa todos los campos.");
-      return;
-    }
+  const productosFiltrados = productos.filter((p) => {
+    const coincideFiltro = p.referencia.toLowerCase().includes(filtro.toLowerCase()) ||
+                           p.color.toLowerCase().includes(filtro.toLowerCase());
+    const coincideAlmacen = almacenSeleccionado ? p.almacen === almacenSeleccionado : true;
+    return coincideFiltro && coincideAlmacen;
+  });
 
-    try {
-      const response = await fetch("https://the-sneaky-store.onrender.com/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ referencia, color, talla, cantidad: Number(cantidad), almacen })
-      });
+  const productosOrdenados = [...productosFiltrados].sort((a, b) => {
+    if (a[orden] < b[orden]) return asc ? -1 : 1;
+    if (a[orden] > b[orden]) return asc ? 1 : -1;
+    return 0;
+  });
 
-      if (response.ok) {
-        alert("Producto registrado exitosamente.");
-        router.push("/inventario");
-      } else {
-        alert("Error al registrar el producto.");
-      }
-    } catch (error) {
-      console.error("Error registrando el producto:", error);
-      alert("Error de conexión.");
+  const totalPaginas = Math.ceil(productosOrdenados.length / registrosPorPagina);
+  const productosPagina = productosOrdenados.slice(
+    (paginaActual - 1) * registrosPorPagina,
+    paginaActual * registrosPorPagina
+  );
+
+  const cambiarOrden = (campo) => {
+    if (orden === campo) setAsc(!asc);
+    else {
+      setOrden(campo);
+      setAsc(true);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-sneakyBlue px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md space-y-4">
-        <h1 className="text-2xl font-bold text-center text-sneakyPink">Registro de Mercancía</h1>
+    <div className="max-w-6xl mx-auto mt-8 space-y-6">
+      <div className="flex justify-between items-center gap-4 flex-wrap">
+        <Input
+          placeholder="Buscar por referencia o color"
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value)}
+          className="w-full md:w-1/2"
+        />
 
-        <Input placeholder="Referencia" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
-        <Input placeholder="Color" value={color} onChange={(e) => setColor(e.target.value)} />
-
-        <Select value={talla} onValueChange={setTalla}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecciona una talla" />
+        <Select value={almacenSeleccionado} onValueChange={setAlmacenSeleccionado}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filtrar por almacén" />
           </SelectTrigger>
           <SelectContent>
-            {tallasDisponibles.map((t) => (
-              <SelectItem key={t} value={t}>{t}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Input placeholder="Cantidad" type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
-
-        <Select value={almacen} onValueChange={setAlmacen}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecciona un almacén" />
-          </SelectTrigger>
-          <SelectContent>
+            <SelectItem value="">Todos</SelectItem>
             {almacenes.map((a) => (
               <SelectItem key={a} value={a}>{a}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Button className="w-full bg-sneakyPink text-white hover:bg-pink-600" onClick={handleRegistro}>
-          Registrar
-        </Button>
+        <div className="flex items-center gap-2">
+          <span>Registros por página:</span>
+          <Select value={registrosPorPagina.toString()} onValueChange={(value) => setRegistrosPorPagina(Number(value))}>
+            <SelectTrigger className="w-[80px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[25, 50, 100].map((num) => (
+                <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {["referencia", "talla", "color", "cantidad", "almacen", "fecha"].map((col) => (
+              <TableHead key={col} onClick={() => cambiarOrden(col)} className="cursor-pointer">
+                {col.charAt(0).toUpperCase() + col.slice(1)} {orden === col && (asc ? "↑" : "↓")}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {productosPagina.map((producto) => (
+            <TableRow key={producto.id}>
+              <TableCell>{producto.referencia}</TableCell>
+              <TableCell>{producto.talla}</TableCell>
+              <TableCell>{producto.color}</TableCell>
+              <TableCell>{producto.cantidad}</TableCell>
+              <TableCell>{producto.almacen}</TableCell>
+              <TableCell>{new Date(producto.fecha).toLocaleDateString()}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <div className="flex justify-between items-center">
+        <span>Página {paginaActual} de {totalPaginas}</span>
+        <div className="space-x-2">
+          <Button disabled={paginaActual === 1} onClick={() => setPaginaActual((p) => p - 1)}>Anterior</Button>
+          <Button disabled={paginaActual === totalPaginas} onClick={() => setPaginaActual((p) => p + 1)}>Siguiente</Button>
+        </div>
       </div>
     </div>
   );
