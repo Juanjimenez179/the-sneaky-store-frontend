@@ -20,6 +20,15 @@ export default function Registro() {
     alert("Mercancía registrada (aún sin guardar en la base de datos)");
   };
 
+  const [almacenes, setAlmacenes] = useState([]);
+  
+  useEffect(() => {
+    fetch("https://the-sneaky-store.onrender.com/stores")
+      .then((res) => res.json())
+      .then(setAlmacenes)
+      .catch(() => alert("Error al cargar almacenes"));
+  }, []);
+
   return (
     <div className="min-h-screen bg-sneakyBlue flex items-center justify-center px-4">
       <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg space-y-6">
@@ -66,19 +75,18 @@ export default function Registro() {
           />
 
           <select
-            type="text"
             name="almacen"
-            placeholder="Nombre del Almacén"
             value={formData.almacen}
             onChange={handleChange}
             required
             className="w-full px-4 py-2 border rounded-md"
           >
             <option value="">Selecciona un almacén</option>
-            <option value="Almacén Centro">Almacén Centro</option>
-            <option value="Almacén Bello">Almacén Bello</option>
-            <option value="Almacén Itagüí">Almacén Itagüí</option>
-            <option value="Almacén Online">Almacén Online</option>
+            {almacenes.map((alm) => (
+              <option key={alm.id} value={alm.name}>
+                {alm.name}
+              </option>
+            ))}
           </select>
 
           <button
